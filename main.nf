@@ -74,6 +74,8 @@ def helpMessage() {
 
     Other options:
       --results                     Name of result directory. Defaults to ${params.results}
+      --help                        Shows this help page
+      --h                           Shows this help page
 
     """.stripIndent()
 }
@@ -81,7 +83,13 @@ def helpMessage() {
 version = "0.1"
 version_date = "May 31th, 2018"
 
-
+// Show help message
+params.help = false
+params.h = false
+if (params.help || params.h){
+    helpMessage()
+    exit 0
+}
 
 params.results = "./admapipe_results"
 params.reads = "/home/maxime/Documents/data/mock_metagenome_deaminated/*.{1,2}.fastq"
