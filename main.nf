@@ -658,6 +658,7 @@ process summarize_results {
         set val(name), file(malt_reads) from malt_res
         set val(name), file(blast_contigs) from blast_res
     output:
+        set val(name), file("*.csv") into summary_result
 
     script:
         outfile = name+".summary.csv"
