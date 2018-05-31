@@ -83,14 +83,6 @@ def helpMessage() {
 version = "0.1"
 version_date = "May 31th, 2018"
 
-// Show help message
-params.help = false
-params.h = false
-if (params.help || params.h){
-    helpMessage()
-    exit 0
-}
-
 params.results = "./admapipe_results"
 params.reads = "/home/maxime/Documents/data/mock_metagenome_deaminated/*.{1,2}.fastq"
 
@@ -124,6 +116,14 @@ malt = "/home/dist/maxime.borry/malt/malt-run"
 
 multiqc_conf = "$baseDir/conf/.multiqc_config.yaml"
 
+// Show help message
+params.help = false
+params.h = false
+if (params.help || params.h){
+    helpMessage()
+    exit 0
+}
+
 //Logging parameters
 log.info "========================================="
 log.info " Assembly pipeline ${version}"
@@ -146,7 +146,7 @@ log.info "========================================="
 Channel
     .fromFilePairs( params.reads, size: 2 )
     .ifEmpty { exit 1, "Cannot find any reads matching: ${params.reads}\n" }
-	  .set {reads_to_trim, reads_fastqc}
+	  .into { reads_fastqc; reads_to_trim }
 
 // Step 1 - FASTQC
 process fastqc {
@@ -156,7 +156,7 @@ process fastqc {
 
     cpus 1
 
-    publishDir "${params.results}/fastqc", mode: 'copy',
+    publishDir "${params.results}/fastqc", mode: 'copy'
 
     input:
         set val(name), file(reads) from reads_fastqc
@@ -599,7 +599,7 @@ process malt_convert {
     script:
         outfile = name+".blast_converted.malt"
         """
-        sed -e 's/|tax|\([0-9]\+\)|//g' metagenome_non_deaminated.aligned.malt > $outfile
+        sed -e 's/|tax|\\([0-9]\\+\\)|//g' metagenome_non_deaminated.aligned.malt > $outfile
         """
 }
 
