@@ -158,8 +158,10 @@ process fastqc {
 
     publishDir "${params.results}/fastqc", mode: 'copy'
 
+    errorStrategy 'ignore'
+
     beforeScript "set +u; source activate fastqc"
-    afterScript "source fastqc"
+    afterScript "source deactivate"
 
     input:
         set val(name), file(reads) from reads_fastqc
