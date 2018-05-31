@@ -165,9 +165,7 @@ process fastqc {
         set val(name), file(reads) from reads_fastqc
 
     output:
-        file '*_fastqc.{zip,html}' into fastqc_results
-        file '.command.out' into fastqc_stdout
-
+        set val(name) file ('*_fastqc.{zip,html}') into fastqc_results
     script:
         """
         fastqc -q $reads
