@@ -1,0 +1,317 @@
+#!/usr/bin/env python
+
+import requests
+import argparse
+import re
+
+def get_args():
+    '''This function parses and return arguments passed in'''
+    parser = argparse.ArgumentParser(
+        prog='summarize all methods',
+        description='''
+        Generate summary count table for each method.
+        '''
+    )
+    parser.add_argument(
+        '-minr',
+        dest="min_reads",
+        default=1000,
+        help="Minimum number of reads to report OTU. Default = 1000")
+    parser.add_argument(
+        '-minc',
+        dest="min_contigs",
+        default=5,
+        help="Minimum number of contigs to report OTU. Default = 5")
+    parser.add_argument(
+        '-r',
+        dest="real_comp",
+        default=None,
+        help="Path to the ADRSM config file. Default = None")
+    parser.add_argument(
+        '-mr',
+        dest="metaphlan_reads",
+        default=None,
+        help="Path to Metaphlan result file. Default = None")
+    parser.add_argument(
+        '-cr',
+        dest="centrifuge_reads",
+        default=None,
+        help="Path to centrifuge result file. Default = None")
+    parser.add_argument(
+        '-cc',
+        dest="centrifuge_contigs",
+        default=None,
+        help="Path to Centrifuge result file. Default = None")
+    parser.add_argument(
+        '-kar',
+        dest="kaiju_reads",
+        default=None,
+        help="Path to Kaiju result file. Default = None")
+    parser.add_argument(
+        '-kac',
+        dest="kaiju_contigs",
+        default=None,
+        help="Path to Kaiju result file. Default = None")
+    parser.add_argument(
+        '-krr',
+        dest="kraken_reads",
+        default=None,
+        help="Path to kraken result file. Default = None")
+    parser.add_argument(
+        '-krc',
+        dest="kraken_contigs",
+        default=None,
+        help="Path to Kraken result file. Default = None")
+    parser.add_argument(
+        '-dr',
+        dest="diamond_reads",
+        default=None,
+        help="Path to Diamond result file. Default = None")
+    parser.add_argument(
+        '-dc',
+        dest="diamond_contigs",
+        default=None,
+        help="Path to Diamond result file. Default = None")
+    parser.add_argument(
+        '-bc',
+        dest="megablast_contigs",
+        default=None,
+        help="Path to Megablast result file. Default = None")
+    parser.add_argument(
+        '-mar',
+        dest="malt_reads",
+        default=None,
+        help="Path to Malt result file. Default = None")
+    parser.add_argument(
+        '-mac',
+        dest="malt_contigs",
+        default=None,
+        help="Path to Malt result file. Default = None")
+    parser.add_argument(
+        '-o',
+        dest="output",
+        default="your_output.txt",
+        help="Path to output file. Default = your_output.txt")
+
+    args = parser.parse_args()
+
+    min_reads = args.min_reads
+    min_contigs = args.min_contigs
+    compo = args.real_comp
+    metaphlan_reads = args.metaphlan_reads
+    centrifuge_reads = args.centrifuge_reads
+    centrifuge_contigs = args.centrifuge_contigs
+    kaiju_reads = args.kaiju_reads
+    kaiju_contigs = args.kaiju_contigs
+    kraken_reads = args.kraken_reads
+    kraken_contigs = args.kraken_contigs
+    diamond_reads = args.diamond_reads
+    diamond_contigs = args.diamond_contigs
+    megablast_contigs = args.megablast_contigs
+    malt_reads = args.malt_reads
+    malt_contigs = args.malt_contigs
+    output = args.output
+
+    return(min_reads, min_contigs, compo, metaphlan_reads, centrifuge_reads, centrifuge_contigs, kaiju_reads, kaiju_contigs, kraken_reads, kraken_contigs, diamond_reads, diamond_contigs, megablast_contigs, malt_reads, malt_contigs, output)
+
+
+def specie_to_taxid(specie):
+    """
+    Takes a specie_name (ex: Mus_musculus), makes a call to JGI
+    taxonomy API, and returns taxonomy id.
+
+    INPUT:
+        specie(string) ex: "Mus musculus"
+    OUPUT:
+        taxid(str) "10090"
+    """
+
+    request = "http://taxonomy.jgi-psf.org/tax/pt_name/" + specie
+    response = requests.get(request)
+    answer = response.text
+    return(answer)
+
+
+def parse_metaphlan(metaphlan_report):
+    myregex = re.compile(".*s__(\w*)\.*")
+    metaphlan_guess = []
+    spec_guess = []
+
+    with open(metaphlan_report, "r") as mr:
+        for line in mr:
+            specie = re.findall(myregex, line.rstrip())
+            if len(specie) > 0:
+                this_specie = "_".join(specie[0].split("_")[0:2])
+                spec_guess.append(this_specie)
+    metaphlan_guess = [specie_to_taxid(i) for i in list(set(spec_guess))]
+    return(metaphlan_guess)
+
+
+def parse_krakenlike(krakenlike_report, minhits):
+    kl_guess = []
+    with open(krakenlike_report, "r") as cr:
+        for line in cr:
+            splitline = line.rstrip().split()
+            if splitline[3] == "S" and splitline[1] >= minhits:
+                kl_guess.append(splitline[4])
+    return(list(set(kl_guess)))
+
+
+def parse_kaiju(kaiju_report):
+    kaiju_guess = []
+    spec_guess = []
+    with open(kaiju_report, "r") as mr:
+        for line in mr:
+            if line.startswith("--------"):
+                continue
+            else:
+                specie = line.rstrip().split("\t")[2]
+                if len(specie) > 0 and specie not in ["species", "Viruses", "classified above rank species", "belong to a species having less than 1000 reads", "unclassified"]:
+                    this_specie = specie.replace(" ", "_")
+                    spec_guess.append(this_specie)
+    kaiju_guess = [specie_to_taxid(i) for i in list(set(spec_guess))]
+    return(kaiju_guess)
+
+
+def parse_basta(basta_report, minhits):
+    spec_guess = {}
+    spec_pass = []
+    basta_guess = []
+    with open(basta_report, "r") as dr:
+        for line in dr:
+            try:
+                splitline = line.rstrip().split()
+                specie = splitline[1].split(";")[-2]
+                count = int(splitline[2].replace("(", "").replace(")", ""))
+                if specie != "unknown" and len(specie.split("_")) > 1:
+                    if specie not in spec_guess.keys():
+                        spec_guess[specie] = count
+                    else:
+                        spec_guess[specie] += count
+            except IndexError:
+                print("Format not recognized for " + line)
+
+    for specie in spec_guess.keys():
+        if spec_guess[specie] >= minhits:
+            spec_pass.append(specie)
+    basta_guess = [specie_to_taxid(i) for i in list(set(spec_pass))]
+    return(basta_guess)
+
+
+def parse_adrsm(adrsm_file):
+    true_comp = []
+    with open(adrsm_file, "r") as tc:
+        next(tc)
+        for line in tc:
+            splitline = line.rstrip().split(",")
+            true_comp.append(splitline[1])
+    return(true_comp)
+
+
+if __name__ == "__main__":
+    MIN_READS, MIN_CONTIGS, COMPO, METAPHLAN_READS, CENTRIFUGE_READS, CENTRIFUGE_CONTIGS, KAIJU_READS, KAIJU_CONTIGS, KRAKEN_READS, KRAKEN_CONTIGS, DIAMOND_READS, DIAMOND_CONTIGS, MEGABLAST_CONTIGS, MALT_READS, MALT_CONTIGS, OUTPUT = get_args()
+
+    all_species = []
+    methods_results = {}
+
+    if METAPHLAN_READS:
+        print("Processing metaphlan reads")
+        metaphlan_reads_guess = parse_metaphlan(METAPHLAN_READS)
+        all_species.extend(metaphlan_reads_guess)
+        methods_results["metaphlan_reads"] = metaphlan_reads_guess
+        # print("metaphlan_reads", metaphlan_reads_guess)
+
+    if CENTRIFUGE_READS:
+        print("Processing centrifuge reads")
+        centrifuge_reads_guess = parse_krakenlike(CENTRIFUGE_READS, MIN_READS)
+        all_species.extend(centrifuge_reads_guess)
+        methods_results["centrifuge_reads"] = centrifuge_reads_guess
+        # print("centrifuge_reads", centrifuge_reads_guess)
+
+    if CENTRIFUGE_CONTIGS:
+        print("Processing centrifuge contigs")
+        centrifuge_contigs_guess = parse_krakenlike(CENTRIFUGE_CONTIGS, MIN_CONTIGS)
+        all_species.extend(centrifuge_contigs_guess)
+        methods_results["centrifuge_contigs"] = centrifuge_contigs_guess
+        # print("centrifuge_contigs", centrifuge_contigs_guess)
+
+    if KAIJU_READS:
+        print("Processing kaiju reads")
+        kaiju_reads_guess = parse_kaiju(KAIJU_READS)
+        all_species.extend(kaiju_reads_guess)
+        methods_results["kaiju_reads"] = kaiju_reads_guess
+        # print("kaiju_reads", kaiju_reads_guess)
+
+    if KAIJU_CONTIGS:
+        print("Processing kaiju contigs")
+        kaiju_contigs_guess = parse_kaiju(KAIJU_CONTIGS)
+        all_species.extend(kaiju_contigs_guess)
+        methods_results["kaiju_contigs"] = kaiju_contigs_guess
+        # print("kaiju_contigs", kaiju_contigs_guess)
+
+    if KRAKEN_READS:
+        print("Processing kraken reads")
+        kraken_reads_guess = parse_krakenlike(KRAKEN_READS, MIN_READS)
+        all_species.extend(kraken_reads_guess)
+        methods_results["kraken_reads"] = kraken_reads_guess
+        # print("kraken_reads", kraken_reads_guess)
+
+    if KRAKEN_CONTIGS:
+        print("Processing kraken contigs")
+        kraken_contigs_guess = parse_krakenlike(KRAKEN_CONTIGS, MIN_CONTIGS)
+        all_species.extend(kraken_contigs_guess)
+        methods_results["kraken_contigs"] = kraken_contigs_guess
+        # print("kraken_contigs", kraken_contigs_guess)
+
+    if DIAMOND_READS:
+        print("Processing diamond reads")
+        diamond_reads_guess = parse_basta(DIAMOND_READS, MIN_READS)
+        all_species.extend(diamond_reads_guess)
+        methods_results["diamond_reads"] = diamond_reads_guess
+        # print("diamond_reads", diamond_reads_guess)
+
+    if DIAMOND_CONTIGS:
+        print("Processing diamond contigs")
+        diamond_contigs_guess = parse_basta(DIAMOND_CONTIGS, MIN_CONTIGS)
+        all_species.extend(diamond_contigs_guess)
+        methods_results["diamond_contigs"] = diamond_contigs_guess
+        # print("diamond_contigs", diamond_contigs_guess)
+
+    if MEGABLAST_CONTIGS:
+        print("Processing mebablast contigs")
+        megablast_contigs_guess = parse_basta(MEGABLAST_CONTIGS, MIN_CONTIGS)
+        all_species.extend(megablast_contigs_guess)
+        methods_results["megablast_contigs"] = megablast_contigs_guess
+        # print("megablast_contigs", megablast_contigs_guess)
+
+    if MALT_READS:
+        print("Processing malt reads")
+        malt_reads_guess = parse_basta(MALT_READS, MIN_READS)
+        all_species.extend(malt_reads_guess)
+        methods_results["malt_reads"] = malt_reads_guess
+        # print("malt_reads", malt_reads_guess)
+
+    if MALT_CONTIGS:
+        print("Processing malt contigs")
+        malt_contigs_guess = parse_basta(MALT_CONTIGS, MIN_CONTIGS)
+        all_species.extend(malt_contigs_guess)
+        methods_results["malt_contigs"] = malt_contigs_guess
+        # print("malt_contigs", malt_contigs_guess)
+
+    all_species = sorted(list(set(all_species)))
+
+    if COMPO:
+        print("Processing real composition file")
+        true_composition = parse_adrsm(COMPO)
+        all_species = [i for i in all_species if i in(true_composition)]
+
+    with open(OUTPUT, "r") as of:
+        of.write("taxid," + ",".join(list(methods_results.keys())) + "\n")
+        for specie in all_species:
+            ares = []
+            for method in methods_results.keys():
+                if specie in methods_results[method]:
+                    ares.append(1)
+                else:
+                    ares.append(0)
+            of.write(str(specie) + "," + ",".join(str(i) for i in ares) + "\n")

@@ -1,0 +1,52 @@
+#!/usr/bin/env python
+
+import argparse
+try:
+    import numpy as np
+except ImportError:
+    print("Please install Numpy first")
+
+
+def get_args():
+    '''This function parses and return arguments passed in'''
+    parser = argparse.ArgumentParser(
+        prog='poscov2featurecov',
+        description='position coverage from bed file to 10th percentile coverage per feature')
+    parser.add_argument('infile', help="path to bed file")
+    parser.add_argument(
+        '-m',
+        dest="minimum_coverage",
+        default=None,
+        help="Minimum 10th percentile coverage to report feature. Default is None")
+
+    args = parser.parse_args()
+
+    infile = args.infile
+    mincov = args.minimum_coverage
+
+    return(infile, mincov)
+
+
+if __name__ == "__main__":
+    INFILE, MINCOV = get_args()
+
+    features = {}
+    with open(INFILE, "r") as f:
+        for line in f:
+            line = line.rstrip()
+            linsplit = line.split()
+            feature_name = linsplit[0]
+            feature_cov = linsplit[2]
+            if feature_name not in features.keys():
+                features[feature_name] = [int(feature_cov)]
+            else:
+                features[feature_name].append(int(feature_cov))
+
+    for akey in features.keys():
+        a = np.array(features[akey])
+        b = np.percentile(a, 10)
+        if MINCOV is not None:
+            if b >= int(MINCOV):
+                print(akey, "\t", round(b, 2))
+        else:
+            print(akey, "\t", round(b, 2))

@@ -1,0 +1,93 @@
+#!/usr/bin/env python
+
+import argparse
+import textwrap
+
+
+def get_args():
+    '''This function parses and return arguments passed in'''
+    parser = argparse.ArgumentParser(
+        prog='filterFastaByName',
+        description='Filter fasta file by sequence name')
+    parser.add_argument('fasta', help="path to fasta input file")
+    parser.add_argument('feature_names', help="feature names to keep")
+    parser.add_argument(
+        '-o',
+        dest="outfile",
+        default="your_output.fa",
+        help="Output fasta file")
+
+    args = parser.parse_args()
+
+    infile = args.fasta
+    names = args.feature_names
+    outfile = args.outfile
+
+    return(infile, names, outfile)
+
+
+def read_fasta(fasta):
+    """
+    READS A FASTA FILE INTO A DICT
+    INPUT:
+        fasta(string) path to fasta file
+    OUTPUT:
+        all_sequences(dict) sequences in a dictionary
+    """
+    all_sequences = {}
+    with open(INFILE, "r") as f:
+        for line in f:
+            line = line.rstrip()
+            if line.startswith(">"):
+                seqname = line[1:len(line) + 1]
+                all_sequences[seqname] = ""
+            else:
+                all_sequences[seqname] += line
+    return(all_sequences)
+
+
+def filter_fasta_dict_by_name(fasta_dict, seqnames):
+    """
+    FILTER A FASTA DICT BY SEQUENCE NAME
+    INPUT:
+        fasta_dict(dict) dictionary of a fasta file
+        seqnames(list) sequences names to keep
+    OUTPUT:
+        filtered_fasta(dict) filtered dictionary of a fasta file
+    """
+
+    filtered_fasta = {}
+
+    for akey in fasta_dict.keys():
+        short_name = akey.split()[0]
+        if short_name in seqnames:
+            filtered_fasta[akey] = fasta_dict[akey]
+    return(filtered_fasta)
+
+
+def write_fasta(fasta_dict, outfile):
+    """
+    WRITE A FASTA DICT TO FILE
+    INPUT:
+        fasta_dict(dict) dictionary of a fasta file
+        outfile(str) name of output file
+    """
+    with open(outfile, "w") as f:
+        for akey in fasta_dict.keys():
+            f.write(">" + akey + "\n" +
+                    textwrap.fill(fasta_dict[akey], 80) + "\n")
+
+
+if __name__ == "__main__":
+    INFILE, NAMES, OUTFILE = get_args()
+
+    seqnames = []
+    with open(NAMES, "r") as f:
+        for line in f:
+            line = line.rstrip()
+            seqnames.append(line)
+    myfasta = read_fasta(INFILE)
+
+    filtered_fasta = filter_fasta_dict_by_name(myfasta, seqnames)
+    write_fasta(filtered_fasta, OUTFILE)
+    print("--------------------\nFiltered fasta written to", OUTFILE)
