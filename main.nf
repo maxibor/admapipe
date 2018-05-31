@@ -158,6 +158,9 @@ process fastqc {
 
     publishDir "${params.results}/fastqc", mode: 'copy'
 
+    beforeScript "set +u; source activate fastqc"
+    afterScript "source fastqc"
+
     input:
         set val(name), file(reads) from reads_fastqc
 
@@ -672,6 +675,9 @@ process multiqc {
     cpus 1
 
     publishDir "${params.results}/MultiQC", mode: 'copy'
+
+    beforeScript "set +u; source activate multiqc"
+    afterScript "source deactivate"
 
 
     input:
