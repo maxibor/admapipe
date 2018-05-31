@@ -125,10 +125,13 @@ if (params.help || params.h){
 }
 
 //Logging parameters
-log.info "========================================="
-log.info " Assembly pipeline ${version}"
+log.info "================================================================"
+log.info " Admapipe: Ancient DNA Metagenomics Analysis PIPEline"
+log.info " Homepage / Documentation: https://github.com/maxibor/admapipe"
+log.info " Author: Maxime Borry <maxime.borry@gmail.com>"
+log.info " Version ${version}"
 log.info " Last updated on ${version_date}"
-log.info "========================================="
+log.info "================================================================"
 def summary = [:]
 summary['Reads'] = params.reads
 summary["Result directory"] = params.results

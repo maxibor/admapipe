@@ -305,7 +305,7 @@ if __name__ == "__main__":
         true_composition = parse_adrsm(COMPO)
         all_species = [i for i in all_species if i in(true_composition)]
 
-    with open(OUTPUT, "r") as of:
+    with open(OUTPUT, "w") as of:
         of.write("taxid," + ",".join(list(methods_results.keys())) + "\n")
         for specie in all_species:
             ares = []
