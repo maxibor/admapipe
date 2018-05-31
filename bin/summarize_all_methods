@@ -152,7 +152,7 @@ def parse_krakenlike(krakenlike_report, minhits):
     with open(krakenlike_report, "r") as cr:
         for line in cr:
             splitline = line.rstrip().split()
-            if splitline[3] == "S" and splitline[1] >= minhits:
+            if splitline[3] == "S" and int(splitline[1]) >= minhits:
                 kl_guess.append(splitline[4])
     return(list(set(kl_guess)))
 
