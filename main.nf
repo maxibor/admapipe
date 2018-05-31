@@ -557,7 +557,7 @@ process basta_from_blast {
         basta_min = 1
         basta_len = 300
         """
-        $basta sequence -t all -n $basta_max -m $basta_min -i $basta_id l $basta_len -x True -d ${params.bastadb} $blast_out $outfile  gb
+        $basta sequence -t all -n $basta_max -m $basta_min -i $basta_id -l $basta_len -x True -d ${params.bastadb} $blast_out $outfile  gb
         """
 }
 
