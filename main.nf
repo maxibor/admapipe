@@ -206,7 +206,8 @@ process adapter_removal_ancient_dna_PE {
 process megahit_assembly{
     tag "$name"
 
-    label 'big_mem'
+    // label 'big_mem'
+    label 'normal'
 
     cpus params.megahitCPU
 
