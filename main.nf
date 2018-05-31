@@ -342,7 +342,7 @@ process bedtools_genomecov {
     output:
         set val(name), file("*.bed") into bedfile
     script:
-        outfile = name+".bg"
+        outfile = name+".bed"
         """
         bedtools genomecov -ibam $bam -d > $outfile
         """
