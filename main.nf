@@ -33,6 +33,7 @@ Pipeline overview:
  - 14.2:  Conversion of MALT results to standard blast output file
  - 14.3:  LCA with BASTA from MALT result
  - 15:    Result summary
+ - 16:    Plot UpSet
  - *:     MultiQC
 
  ----------------------------------------------------------------------------------------
@@ -74,14 +75,13 @@ def helpMessage() {
 
     Other options:
       --results                     Name of result directory. Defaults to ${params.results}
-      --help                        Shows this help page
-      --h                           Shows this help page
+      --help  --h                   Shows this help page
 
     """.stripIndent()
 }
 
 version = "0.1"
-version_date = "May 31th, 2018"
+version_date = "June 1st, 2018"
 
 params.results = "./admapipe_results"
 params.reads = "/home/maxime/Documents/data/mock_metagenome_deaminated/*.{1,2}.fastq"
@@ -666,6 +666,33 @@ process summarize_results {
         summarize_all_methods -mr $metaphlan_reads -krr $kraken_reads -mar $malt_reads -bc $blast_contigs -o $outfile
         """
 
+}
+
+// Step 16 - Plot UpSet
+
+process upset {
+    tag "$name"
+
+    errorStrategy 'ignore'
+
+    label 'normal'
+
+    cpus 1
+
+    publishDir "${params.results}/summary", mode: 'copy'
+
+    beforeScript "set +u; source activate upset"
+    afterScript "source deactivate"
+
+    input:
+        set val(name), file(table) from summary_result
+    output:
+        set val(name), file("*.upsetplot.png") into upset_plot
+    script:
+        outfile = name+".upsetplot.png"
+        """
+        plot_upset $table -o $outfile
+        """
 }
 
 // MultiQC
