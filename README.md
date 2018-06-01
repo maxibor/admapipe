@@ -1,10 +1,10 @@
-<img src="img/logo.png" height="300">
+<img src="img/logo.png" height="150">
 
 * * *
 
 ## Introduction
 
-Admapipe (Ancient DNA Metagenomics Analysis PIPEline) is a [Nextflow](https://nextflow.io) designed to reliably identify species in an ancient DNA metagenomics Illumina dataset.
+Admapipe (Ancient DNA Metagenomics Analysis PIPEline) is a [Nextflow](https://nextflow.io) pipeline designed to reliably identify species in an ancient DNA metagenomics Illumina dataset.
 
 ## The Pipeline
 
