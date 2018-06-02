@@ -385,6 +385,8 @@ process filter_sam_coverage {
 
     publishDir "${params.results}/alignment", mode: 'copy'
 
+    errorStrategy 'ignore'
+
     input:
         set val(name), file(sam) from alignment_sam
         set val(name), file(contigs) from filtered_contigs_sam
