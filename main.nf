@@ -585,7 +585,7 @@ process malt {
         outfile = name+".aligned.malt"
         outrma = name+".rma"
         """
-        $malt --mode BlastN --alignments $outfile --gzipAlignments false --format Tab --index ${params.maltdb} --numThreads 16 --inFile $fasta --output $outrma
+        $malt --mode BlastN --alignments $outfile --gzipAlignments false --format Tab --index ${params.maltdb} --numThreads ${task.cpus} --inFile $fasta --output $outrma
         """
 }
 
@@ -608,7 +608,7 @@ process malt_convert {
     script:
         outfile = name+".blast_converted.malt"
         """
-        sed -e 's/|tax|\\([0-9]\\+\\)|//g' metagenome_non_deaminated.aligned.malt > $outfile
+        sed -e 's/|tax|\\([0-9]\\+\\)|//g' $malt_out > $outfile
         """
 }
 
