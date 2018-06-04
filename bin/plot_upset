@@ -34,7 +34,7 @@ def pd2dict(pd_df):
     """
     d_dict = {}
     all_tax = list(d.index)
-    for i in range(1, d.shape[1]):
+    for i in range(0, d.shape[1]):
         d_dict[d.columns[i]] = []
         for j in range(0, d.shape[0]):
             if d.iloc[j, i] == 1:
@@ -47,5 +47,5 @@ if __name__ == "__main__":
     INFILE, OUTFILE = get_args()
     d = pd.read_csv(INFILE, index_col=0)
     d_dict = pd2dict(d)
-    p = pyu.plot(d_dict, inters_size_bounds=(1, 9999999999999999999999))
+    pyu.plot(d_dict, inters_size_bounds=(1, 9999999999))
     plt.savefig(OUTFILE)
