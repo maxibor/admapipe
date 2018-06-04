@@ -376,6 +376,7 @@ process filter_contigs {
 }
 
 // Step 9.2 - SAM file filtering with filtered contigs on coverage
+/*
 process filter_sam_coverage {
     tag "$name"
 
@@ -398,6 +399,7 @@ process filter_sam_coverage {
         grep -f $contigs -w $sam > $outfile
         """
 }
+*/
 
 // Step 9.3 - Fasta file filtering with filtered contigs on coverage
 process filter_fasta_coverage{

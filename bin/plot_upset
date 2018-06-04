@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import pyupset as pyu
 import pandas as pd
 
+plt.switch_backend('agg')
+
 
 def get_args():
     '''This function parses and return arguments passed in'''
