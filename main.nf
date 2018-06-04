@@ -98,7 +98,7 @@ params.blastdb = "/home/dist/maxime.borry/db/nt/blast/blast/nt"
 
 params.bastadb = "/home/dist/maxime.borry/BASTA/taxonomy"
 
-params.maltdb = "/home/dist/maxime.borry/db/malt/refseq_bacteria_step2"
+// params.maltdb = "/home/dist/maxime.borry/db/malt/refseq_bacteria_step2"
 
 
 params.trimmingCPU = 16
@@ -112,7 +112,7 @@ params.maltCPU = 16
 
 
 basta = "/home/dist/maxime.borry/BASTA/bin/basta"
-malt = "/home/dist/maxime.borry/malt/malt-run"
+// malt = "/home/dist/maxime.borry/malt/malt-run"
 
 multiqc_conf = "$baseDir/conf/.multiqc_config.yaml"
 
@@ -140,7 +140,7 @@ summary["Minimum 10th percentile contig coverage"] = params.min_coverage
 summary["Minimum contig length"] = params.min_length
 summary["Kraken database"] = params.krakendb
 summary["Blast database"] = params.blastdb
-summary["MALT database"] = params.maltdb
+// summary["MALT database"] = params.maltdb
 summary["BASTA (LCA) database"] = params.bastadb
 log.info summary.collect { k,v -> "${k.padRight(15)}: $v" }.join("\n")
 log.info "========================================="
@@ -195,7 +195,8 @@ process adapter_removal_ancient_dna_PE {
         set val(name), file(reads) from reads_to_trim
 
     output:
-        set val(name), file('*.collapsed.fastq') into trimmed_reads_assembly, trimmed_reads_mapping, trimmed_reads_kraken, trimmed_reads_metaphlan, trimmed_reads_malt
+        // set val(name), file('*.collapsed.fastq') into trimmed_reads_assembly, trimmed_reads_mapping, trimmed_reads_kraken, trimmed_reads_metaphlan, trimmed_reads_malt
+        set val(name), file('*.collapsed.fastq') into trimmed_reads_assembly, trimmed_reads_mapping, trimmed_reads_kraken, trimmed_reads_metaphlan
         set val(name), file("*.settings") into adapter_removal_results
 
     script:
@@ -269,8 +270,7 @@ process align_reads_to_contigs{
     afterScript "source deactivate"
 
     input:
-        set val(name), file(reads) from trimmed_reads_mapping
-        set val(name), file(contig) from bt_index
+        set val(name), file(reads), file(contig) from trimmed_reads_mapping.join(bt_index)
     output:
         set val(name), file("*.sorted.bam") into alignment_to_index, alignment_to_coverage, alignment_to_sam
     script:
@@ -376,7 +376,7 @@ process filter_contigs {
 }
 
 // Step 9.2 - SAM file filtering with filtered contigs on coverage
-/*
+
 process filter_sam_coverage {
     tag "$name"
 
@@ -389,8 +389,7 @@ process filter_sam_coverage {
     errorStrategy 'ignore'
 
     input:
-        set val(name), file(sam) from alignment_sam
-        set val(name), file(contigs) from filtered_contigs_sam
+        set val(name), file(sam), file(contigs)  from alignment_sam.join(filtered_contigs_sam)
     output:
         set val(name), file("*.filtered.sam") into filtered_alignment
     script:
@@ -399,7 +398,7 @@ process filter_sam_coverage {
         grep -f $contigs -w $sam > $outfile
         """
 }
-*/
+
 
 // Step 9.3 - Fasta file filtering with filtered contigs on coverage
 process filter_fasta_coverage{
@@ -410,8 +409,7 @@ process filter_fasta_coverage{
     cpus 1
 
     input:
-        set val(name), file(contig) from contigs_filter
-        set val(name), file(filt_contig) from filtered_contigs_fasta
+        set val(name), file(contig), file(filt_contig) from contigs_filter.join(filtered_contigs_fasta)
     output:
         set val(name), file("*.filtered_contigs.fa") into filtered_fasta_coverage
     script:
@@ -568,81 +566,81 @@ process basta_from_blast {
         """
 }
 
-// Step 14.1 - MALT metagenome analysis
-process malt {
-    tag "$name"
+// // Step 14.1 - MALT metagenome analysis
+// process malt {
+//     tag "$name"
+//
+//     label 'very_big_mem'
+//
+//     cpus params.maltCPU
+//
+//     publishDir "${params.results}/malt", mode: 'copy'
+//
+//     input:
+//         set val(name), file(fasta) from trimmed_reads_malt
+//     output:
+//         set val(name), file("*.aligned.malt") into malt_output
+//         set val(name), file("*.rma") into malt_rma
+//     script:
+//         outfile = name+".aligned.malt"
+//         outrma = name+".rma"
+//         """
+//         $malt --mode BlastN --alignments $outfile --gzipAlignments false --format Tab --index ${params.maltdb} --numThreads ${task.cpus} --inFile $fasta --output $outrma
+//         """
+// }
 
-    label 'very_big_mem'
-
-    cpus params.maltCPU
-
-    publishDir "${params.results}/malt", mode: 'copy'
-
-    input:
-        set val(name), file(fasta) from trimmed_reads_malt
-    output:
-        set val(name), file("*.aligned.malt") into malt_output
-        set val(name), file("*.rma") into malt_rma
-    script:
-        outfile = name+".aligned.malt"
-        outrma = name+".rma"
-        """
-        $malt --mode BlastN --alignments $outfile --gzipAlignments false --format Tab --index ${params.maltdb} --numThreads ${task.cpus} --inFile $fasta --output $outrma
-        """
-}
-
-// Step 14.2 - Conversion of MALT results to standard blast output file
-process malt_convert {
-    tag "$name"
-
-    errorStrategy 'ignore'
-
-    label 'normal'
-
-    cpus 1
-
-    publishDir "${params.results}/malt", mode: 'copy'
-
-    input:
-        set val(name), file(malt_out) from malt_output
-    output:
-        set val(name), file("*.blast_converted.malt") into malt_converted
-    script:
-        outfile = name+".blast_converted.malt"
-        """
-        sed -e 's/|tax|\\([0-9]\\+\\)|//g' $malt_out > $outfile
-        """
-}
-
-// Step 14.3 - LCA with BASTA from MALT result
-process basta_from_malt {
-    tag "$name"
-
-    errorStrategy 'ignore'
-
-    label 'normal'
-
-    cpus 1
-
-    publishDir "${params.results}/malt", mode: 'copy'
-
-    beforeScript "set +u; source activate basta"
-    afterScript "source deactivate"
-
-    input:
-        set val(name), file(malt_out) from malt_converted
-    output:
-        set val(name), file("*.malt.basta") into malt_res
-    script:
-        outfile = name+".malt.basta"
-        basta_max = 30
-        basta_id = 97
-        basta_min = 1
-        basta_len = 100
-        """
-        $basta sequence -t all -n $basta_max -m $basta_min -i $basta_id -l $basta_len -x True -d ${params.bastadb} $malt_out $outfile gb
-        """
-}
+// // Step 14.2 - Conversion of MALT results to standard blast output file
+// process malt_convert {
+//     tag "$name"
+//
+//     errorStrategy 'ignore'
+//
+//     label 'normal'
+//
+//     cpus 1
+//
+//     publishDir "${params.results}/malt", mode: 'copy'
+//
+//     input:
+//         set val(name), file(malt_out) from malt_output
+//     output:
+//         set val(name), file("*.blast_converted.malt") into malt_converted
+//     script:
+//         outfile = name+".blast_converted.malt"
+//         """
+//         sed -e 's/|tax|\\([0-9]\\+\\)|//g' $malt_out > $outfile
+//         """
+// }
+//
+// // Step 14.3 - LCA with BASTA from MALT result
+// process basta_from_malt {
+//     tag "$name"
+//
+//     errorStrategy 'ignore'
+//
+//     label 'normal'
+//
+//     cpus 1
+//
+//     publishDir "${params.results}/malt", mode: 'copy'
+//
+//     beforeScript "set +u; source activate basta"
+//     afterScript "source deactivate"
+//
+//     input:
+//         set val(name), file(malt_out) from malt_converted
+//     output:
+//         set val(name), file("*.malt.basta") into malt_res
+//     script:
+//         outfile = name+".malt.basta"
+//         basta_max = 30
+//         basta_id = 97
+//         basta_min = 1
+//         basta_len = 100
+//         """
+//         $basta sequence -t all -n $basta_max -m $basta_min -i $basta_id -l $basta_len -x True -d ${params.bastadb} $malt_out $outfile gb
+//         """
+// }
 
 // Step 15 - Result summary
 process summarize_results {
@@ -657,47 +655,51 @@ process summarize_results {
     publishDir "${params.results}/summary", mode: 'copy'
 
     input:
-        set val(name), file(metaphlan_reads) from metaphlan_res
-        set val(name), file(kraken_reads) from kraken_res
-        set val(name), file(malt_reads) from malt_res
-        set val(name), file(blast_contigs) from blast_res
+        // set val(name), file(metaphlan_reads), file(kraken_reads), file(malt_reads), file(blast_contigs) from metaphlan_res.join(kraken_res, malt_res, blast_res)
+        set val(name), file(metaphlan_reads), file(kraken_reads), file(blast_contigs) from metaphlan_res.mix(kraken_res, blast_res).groupTuple()
     output:
         set val(name), file("*.csv") into summary_result
 
+    // script:
+    //     outfile = name+".summary.csv"
+    //     """
+    //     summarize_all_methods -mr $metaphlan_reads -krr $kraken_reads -mar $malt_reads -bc $blast_contigs -o $outfile
+    //     """
     script:
         outfile = name+".summary.csv"
         """
-        summarize_all_methods -mr $metaphlan_reads -krr $kraken_reads -mar $malt_reads -bc $blast_contigs -o $outfile
+        summarize_all_methods -mr $metaphlan_reads -krr $kraken_reads -bc $blast_contigs -o $outfile
         """
+
 
 }
 
 // Step 16 - Plot UpSet
 
-process upset {
-    tag "$name"
-
-    errorStrategy 'ignore'
-
-    label 'normal'
-
-    cpus 1
-
-    publishDir "${params.results}/summary", mode: 'copy'
-
-    beforeScript "set +u; source activate upset"
-    afterScript "source deactivate"
-
-    input:
-        set val(name), file(table) from summary_result
-    output:
-        set val(name), file("*.upsetplot.png") into upset_plot
-    script:
-        outfile = name+".upsetplot.png"
-        """
-        plot_upset $table -o $outfile
-        """
-}
+// process upset {
+//     tag "$name"
+//
+//     errorStrategy 'ignore'
+//
+//     label 'normal'
+//
+//     cpus 1
+//
+//     publishDir "${params.results}/summary", mode: 'copy'
+//
+//     beforeScript "set +u; source activate upset"
+//     afterScript "source deactivate"
+//
+//     input:
+//         set val(name), file(table) from summary_result
+//     output:
+//         set val(name), file("*.upsetplot.png") into upset_plot
+//     script:
+//         outfile = name+".upsetplot.png"
+//         """
+//         plot_upset $table -o $outfile
+//         """
+// }
 
 // MultiQC
 process multiqc {

@@ -1,0 +1,166 @@
+#!/usr/bin/env python
+
+import argparse
+import requests
+import pandas as pd
+
+
+def get_args():
+    '''This function parses and return arguments passed in'''
+    parser = argparse.ArgumentParser(
+        prog='export_species',
+        description='filter species from admapipe method count table')
+    parser.add_argument(
+        '-c',
+        dest="control",
+        default=None,
+        help="Control presence/absence file. Default = None")
+    parser.add_argument(
+        '-s',
+        dest="sample",
+        default=None,
+        help="Sample presence/absence file. Default = None")
+    parser.add_argument(
+        '-b',
+        dest="blast",
+        default=None,
+        help="Megablast/basta output file. Default = None")
+    parser.add_argument(
+        '-m',
+        dest="malt",
+        default=None,
+        help=" Malt/basta output file. Default = None")
+    parser.add_argument(
+        '-k',
+        dest="kraken",
+        default=None,
+        help="Kraken report output file. Default = None")
+    parser.add_argument(
+        '-o',
+        dest="output",
+        default="output.csv",
+        help="Output file. Default = output.csv")
+
+    args = parser.parse_args()
+
+    control = args.control
+    sample = args.sample
+    blast = args.blast
+    malt = args.malt
+    kraken = args.kraken
+    outfile = args.output
+
+    return(control, sample, blast, malt, kraken, outfile)
+
+
+def taxid_to_specie(taxid):
+    """
+    Takes a NCBI tax_id(ex: 10090 ), makes a call to JGI
+    taxonomy API, and returns a specie name.
+
+    INPUT:
+        taxid(int) ex: 10090
+    OUPUT:
+        specie(str) "Mus musculus"
+    """
+
+    request = "http://taxonomy.jgi-psf.org/sc/id/" + str(taxid)
+    response = requests.get(request)
+    answer = response.text
+    specie = answer.split(
+        ";")[-1].split(":")[1].replace("[", "").replace("]", "")
+    return(specie)
+
+
+def specie_to_taxid(specie):
+    """
+    Takes a specie_name (ex: Mus_musculus), makes a call to JGI
+    taxonomy API, and returns taxonomy id.
+
+    INPUT:
+        specie(string) ex: "Mus musculus"
+    OUPUT:
+        taxid(str) "10090"
+    """
+
+    request = "http://taxonomy.jgi-psf.org/tax/pt_name/" + specie
+    response = requests.get(request)
+    answer = response.text
+    return(answer)
+
+
+def parse_basta(basta_report):
+    spec_guess = {}
+    tax_guess = {}
+    with open(basta_report, "r") as dr:
+        for line in dr:
+            try:
+                splitline = line.rstrip().split()
+                specie = splitline[1].split(";")[-2]
+                count = int(splitline[2].replace("(", "").replace(")", ""))
+                if specie != "unknown" and len(specie.split("_")) > 1:
+                    if specie not in spec_guess.keys():
+                        spec_guess[specie] = count
+                    else:
+                        spec_guess[specie] += count
+            except IndexError:
+                print("Format not recognized for " + line)
+
+    for specie in spec_guess.keys():
+        if spec_guess[specie] >= 1000:
+            tax_guess[specie_to_taxid(specie)] = spec_guess[specie]
+    return(tax_guess)
+
+
+def parse_krakenlike(krakenlike_report):
+    kl_guess = {}
+    with open(krakenlike_report, "r") as cr:
+        for line in cr:
+            splitline = line.rstrip().split()
+            if splitline[3] == "S":
+                if splitline[4] not in kl_guess.keys():
+                    kl_guess[splitline[4]] = int(splitline[1])
+                else:
+                    kl_guess[splitline[4]] += int(splitline[1])
+    return(kl_guess)
+
+
+if __name__ == "__main__":
+    specie_count = {}
+    CONTROL, SAMPLE, BLAST, MALT, KRAKEN, OUTFILE = get_args()
+
+    control = pd.read_csv(CONTROL, index_col=0)
+    control_species = []
+    for i in range(0, control.shape[0]):
+        if sum(control.iloc[i, :]) >= 2:
+            control_species.append(control.index[i])
+
+    sample = pd.read_csv(SAMPLE, index_col=0)
+
+    print("parsing blast")
+    blast = parse_basta(BLAST)
+
+    print("parsing malt")
+    malt = parse_basta(MALT)
+
+    print("parsing kraken")
+    kraken = parse_krakenlike(KRAKEN)
+
+    for i in range(0, sample.shape[0]):
+        print(i, "/", sample.shape[0])
+        taxid = sample.index[i]
+        if taxid in control_species:
+            print(taxid, "in control")
+        elif taxid not in control_species and sum(sample.iloc[i, :]) >= 2:
+            specie = taxid_to_specie(taxid)
+            specie_count[specie] = []
+            taxid = str(taxid)
+            if taxid in blast.keys():
+                specie_count[specie].append(blast[taxid])
+            if taxid in malt.keys():
+                specie_count[specie].append(malt[taxid])
+            if taxid in kraken.keys():
+                specie_count[specie].append(kraken[taxid])
+
+    for akey in specie_count.keys():
+        print(akey, specie_count[akey])
