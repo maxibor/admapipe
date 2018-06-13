@@ -21,8 +21,7 @@ Pipeline overview:
  - 7:     Converting BAM to SAM
  - 8:     Position specific coverage for contigs
  - 9.1:   Contig filtering on 10th percentile coverage
- - 9.2:   SAM file filtering with filtered contigs on coverage
- - 9.3:   Fasta file filtering with filtered contigs on coverage
+ - 9.2:   Fasta file filtering with filtered contigs on coverage
  - 10:    Fasta file filtering on contig length
  - 11.1:  Kraken metagenome taxonomic classification
  - 11.2:  Kraken report generation
@@ -33,7 +32,6 @@ Pipeline overview:
  - 14.2:  Conversion of MALT results to standard blast output file
  - 14.3:  LCA with BASTA from MALT result
  - 15:    Result summary
- - 16:    Plot UpSet
  - *:     MultiQC
 
  ----------------------------------------------------------------------------------------
@@ -177,7 +175,7 @@ process fastqc {
         """
 }
 
-// Step 2 - AdapterRemoval: Adapter trimming, quality filtering, and read merging
+// Step 2 -  Adapter trimming, quality filtering, and read merging
 process adapter_removal_ancient_dna_PE {
     tag "$name"
 
@@ -196,7 +194,6 @@ process adapter_removal_ancient_dna_PE {
 
     output:
         set val(name), file('*.collapsed.fastq') into trimmed_reads_assembly, trimmed_reads_mapping, trimmed_reads_kraken, trimmed_reads_metaphlan, trimmed_reads_malt
-        // set val(name), file('*.collapsed.fastq') into trimmed_reads_assembly, trimmed_reads_mapping, trimmed_reads_kraken, trimmed_reads_metaphlan
         set val(name), file("*.settings") into adapter_removal_results
 
     script:
@@ -375,32 +372,7 @@ process filter_contigs {
         """
 }
 
-// Step 9.2 - SAM file filtering with filtered contigs on coverage
-/*
-process filter_sam_coverage {
-    tag "$name"
-
-    label 'normal'
-
-    cpus 1
-
-    publishDir "${params.results}/alignment", mode: 'copy'
-
-    errorStrategy 'ignore'
-
-    input:
-        set val(name), file(sam), file(contigs)  from alignment_sam.join(filtered_contigs_sam)
-    output:
-        set val(name), file("*.filtered.sam") into filtered_alignment
-    script:
-        outfile = name+".filtered.sam"
-        """
-        grep -f $contigs -w $sam > $outfile
-        """
-}
-*/
-
-// Step 9.3 - Fasta file filtering with filtered contigs on coverage
+// Step 9.2 - Fasta file filtering with filtered contigs on coverage
 process filter_fasta_coverage{
     tag "$name"
 
@@ -669,41 +641,8 @@ process summarize_results {
         """
         summarize_all_methods -mr $metaphlan_reads -krr $kraken_reads -mar $malt_reads -bc $blast_contigs -o $outfile
         """
-    // script:
-    //     outfile = name+".summary.csv"
-    //     """
-    //     summarize_all_methods -mr $metaphlan_reads -krr $kraken_reads -bc $blast_contigs -o $outfile
-    //     """
-
 
 }
-
-// Step 16 - Plot UpSet
-
-// process upset {
-//     tag "$name"
-//
-//     errorStrategy 'ignore'
-//
-//     label 'normal'
-//
-//     cpus 1
-//
-//     publishDir "${params.results}/summary", mode: 'copy'
-//
-//     beforeScript "set +u; source activate upset"
-//     afterScript "source deactivate"
-//
-//     input:
-//         set val(name), file(table) from summary_result
-//     output:
-//         set val(name), file("*.upsetplot.png") into upset_plot
-//     script:
-//         outfile = name+".upsetplot.png"
-//         """
-//         plot_upset $table -o $outfile
-//         """
-// }
 
 // MultiQC
 process multiqc {
