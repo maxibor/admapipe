@@ -13,12 +13,14 @@ Admapipe (Ancient DNA Metagenomics Analysis PIPEline) is a [Nextflow](https://ne
 -   [Nextflow > 0.30](https://www.nextflow.io/)
 -   [Conda](https://conda.io/miniconda.html)
 -   [MALT](http://ab.inf.uni-tuebingen.de/software/malt/)
+-   [BASTA](https://github.com/timkahlke/BASTA)
 
 ### Databases
 
 -   [Kraken database](https://ccb.jhu.edu/software/kraken/)
 -   [Blast database](https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&PAGE_TYPE=BlastDocs&DOC_TYPE=Download)
 -   MALT database: to [build](http://ab.inf.uni-tuebingen.de/data/software/malt/download/manual.pdf) from reference sequence file.
+-   [BASTA database](https://github.com/timkahlke/BASTA/wiki/2.-Initial-Setup)
 
 ## The Pipeline
 
