@@ -80,8 +80,8 @@ def helpMessage() {
     """.stripIndent()
 }
 
-version = "0.1"
-version_date = "June 1st, 2018"
+version = "0.2"
+version_date = "June 13th, 2018"
 
 params.results = "./admapipe_results"
 params.reads = "/home/maxime/Documents/data/mock_metagenome_deaminated/*.{1,2}.fastq"
