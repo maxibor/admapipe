@@ -640,7 +640,7 @@ process basta_from_malt {
         basta_max = 30
         basta_id = 97
         basta_min = 1
-        basta_len = 100
+        basta_len = 30
         """
         $basta sequence -t all -n $basta_max -m $basta_min -i $basta_id -l $basta_len -x True -d ${params.bastadb} $malt_out $outfile gb
         """
