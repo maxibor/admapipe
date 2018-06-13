@@ -544,6 +544,8 @@ process basta_from_blast {
 
     label 'normal'
 
+    maxForks 1
+
     cpus 1
 
     publishDir "${params.results}/megablast", mode: 'copy'
@@ -619,6 +621,8 @@ process basta_from_malt {
     errorStrategy 'ignore'
 
     label 'normal'
+
+    maxForks 1
 
     cpus 1
 

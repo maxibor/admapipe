@@ -36,6 +36,11 @@ def get_args():
         default=None,
         help="Kraken report output file. Default = None")
     parser.add_argument(
+        '-min',
+        dest="minimum_method",
+        default=2,
+        help="Minimum number of methods finding a OTU to report it. Default = 2")
+    parser.add_argument(
         '-o',
         dest="output",
         default="output.csv",
@@ -48,9 +53,10 @@ def get_args():
     blast = args.blast
     malt = args.malt
     kraken = args.kraken
+    minim = args.minimum_method
     outfile = args.output
 
-    return(control, sample, blast, malt, kraken, outfile)
+    return(control, sample, blast, malt, kraken, minim, outfile)
 
 
 def taxid_to_specie(taxid):
@@ -127,39 +133,42 @@ def parse_krakenlike(krakenlike_report):
 
 if __name__ == "__main__":
     specie_count = {}
-    CONTROL, SAMPLE, BLAST, MALT, KRAKEN, OUTFILE = get_args()
+    CONTROL, SAMPLE, BLAST, MALT, KRAKEN, MINIM, OUTFILE = get_args()
 
     control = pd.read_csv(CONTROL, index_col=0)
     control_species = []
     for i in range(0, control.shape[0]):
-        if sum(control.iloc[i, :]) >= 2:
+        if sum(control.iloc[i, :]) >= 1:
             control_species.append(control.index[i])
 
     sample = pd.read_csv(SAMPLE, index_col=0)
 
-    print("parsing blast")
-    blast = parse_basta(BLAST)
+    if BLAST:
+        print("parsing blast")
+        blast = parse_basta(BLAST)
 
-    print("parsing malt")
-    malt = parse_basta(MALT)
+    if MALT:
+        print("parsing malt")
+        malt = parse_basta(MALT)
 
-    print("parsing kraken")
-    kraken = parse_krakenlike(KRAKEN)
+    if KRAKEN:
+        print("parsing kraken")
+        kraken = parse_krakenlike(KRAKEN)
 
     for i in range(0, sample.shape[0]):
         print(i, "/", sample.shape[0])
         taxid = sample.index[i]
         if taxid in control_species:
             print(taxid, "in control")
-        elif taxid not in control_species and sum(sample.iloc[i, :]) >= 2:
+        elif taxid not in control_species and sum(sample.iloc[i, :]) >= MINIM:
             specie = taxid_to_specie(taxid)
             specie_count[specie] = []
             taxid = str(taxid)
-            if taxid in blast.keys():
+            if BLAST and taxid in blast.keys():
                 specie_count[specie].append(blast[taxid])
-            if taxid in malt.keys():
+            if MALT and taxid in malt.keys():
                 specie_count[specie].append(malt[taxid])
-            if taxid in kraken.keys():
+            if KRAKEN and taxid in kraken.keys():
                 specie_count[specie].append(kraken[taxid])
 
     for akey in specie_count.keys():
