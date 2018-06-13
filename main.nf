@@ -114,6 +114,11 @@ malt = "/home/dist/maxime.borry/malt/malt-run"
 
 multiqc_conf = "$baseDir/conf/.multiqc_config.yaml"
 
+if( ! nextflow.version.matches(">= 0.30") ){
+    throw GroovyException('Nextflow version too old')
+    exit 0
+}
+
 // Show help message
 params.help = false
 params.h = false
@@ -153,6 +158,8 @@ Channel
 process fastqc {
     tag "$name"
 
+    conda 'bioconda::fastqc'
+
     label 'normal'
 
     cpus 1
@@ -160,9 +167,6 @@ process fastqc {
     publishDir "${params.results}/fastqc", mode: 'copy'
 
     errorStrategy 'ignore'
-
-    beforeScript "set +u; source activate fastqc"
-    afterScript "source deactivate"
 
     input:
         set val(name), file(reads) from reads_fastqc
@@ -185,10 +189,6 @@ process adapter_removal_ancient_dna_PE {
 
     publishDir "${params.results}/trimmed", mode: 'copy'
 
-    beforeScript "set +u; source activate adapterremoval"
-    afterScript "source deactivate"
-
-
     input:
         set val(name), file(reads) from reads_to_trim
 
@@ -210,15 +210,13 @@ process adapter_removal_ancient_dna_PE {
 process megahit_assembly{
     tag "$name"
 
-    // label 'big_mem'
+    conda 'bioconda::megahit'
+
     label 'normal'
 
     cpus params.megahitCPU
 
     publishDir "${params.results}/assembly", mode: 'copy'
-
-    beforeScript "set +u; source activate megahit"
-    afterScript "source deactivate"
 
     input:
         set val(name), file(merged) from trimmed_reads_assembly
@@ -234,14 +232,13 @@ process megahit_assembly{
 process bowtie_index_contigs{
     tag "$name"
 
+    conda 'bioconda::bowtie2'
+
     label 'normal'
 
     cpus params.bowtieCPU
 
     publishDir "${params.results}/bowtie_index", mode: 'copy'
-
-    beforeScript "set +u; source activate bowtie"
-    afterScript "source deactivate"
 
     input:
         set val(name), file(contig) from contigs_mapping
@@ -257,14 +254,13 @@ process bowtie_index_contigs{
 process align_reads_to_contigs{
     tag "$name"
 
+    conda 'bioconda::bowtie2 bioconda::samtools'
+
     label 'normal'
 
     cpus params.bowtieCPU
 
     publishDir "${params.results}/alignment", mode: 'copy'
-
-    beforeScript "set +u; source activate bowtie"
-    afterScript "source deactivate"
 
     input:
         set val(name), file(reads), file(contig) from trimmed_reads_mapping.join(bt_index)
@@ -282,14 +278,13 @@ process align_reads_to_contigs{
 process bam_index {
     tag "$name"
 
+    conda 'bioconda::samtools'
+
     label 'normal'
 
     cpus 1
 
     publishDir "${params.results}/alignment", mode: 'copy'
-
-    beforeScript "set +u; source activate samtools"
-    afterScript "source deactivate"
 
     input:
         set val(name), file(bam) from alignment_to_index
@@ -309,9 +304,6 @@ process bam2sam {
 
     cpus 1
 
-    beforeScript "set +u; source activate samtools"
-    afterScript "source deactivate"
-
     input:
         set val(name), file(bam) from alignment_to_sam
     output:
@@ -328,14 +320,13 @@ process bam2sam {
 process bedtools_genomecov {
     tag "$name"
 
+    conda 'bioconda::bedtools'
+
     label 'normal'
 
     cpus 1
 
     publishDir "${params.results}/coverage", mode: 'copy'
-
-    beforeScript "set +u; source activate bedtools"
-    afterScript "source deactivate"
 
     input:
         set val(name), file(bam) from alignment_to_coverage
@@ -351,6 +342,8 @@ process bedtools_genomecov {
 // Step 9.1 - Contig filtering on 10th percentile coverage
 process filter_contigs {
     tag "$name"
+
+    conda 'python=3.6 numpy'
 
     label 'normal'
 
@@ -376,6 +369,8 @@ process filter_contigs {
 process filter_fasta_coverage{
     tag "$name"
 
+    conda 'python=3.6'
+
     label 'normal'
 
     cpus 1
@@ -394,6 +389,8 @@ process filter_fasta_coverage{
 // Step 10 - Fasta file filtering on contig length
 process filter_fasta_length {
     tag "$name"
+
+    conda 'python=3.6'
 
     label 'normal'
 
@@ -415,14 +412,13 @@ process filter_fasta_length {
 process kraken {
     tag "$name"
 
+    conda 'bioconda::kraken'
+
     label 'normal'
 
     cpus params.krakenCPU
 
     publishDir "${params.results}/kraken", mode: 'copy'
-
-    beforeScript "set +u; source activate kraken"
-    afterScript "source deactivate kraken"
 
     input:
         set val(name), file(fasta) from trimmed_reads_kraken
@@ -440,14 +436,13 @@ process kraken {
 process kraken_report {
     tag "$name"
 
+    conda 'bioconda::kraken'
+
     label 'normal'
 
     cpus 1
 
     publishDir "${params.results}/kraken", mode: 'copy'
-
-    beforeScript "set +u; source activate kraken"
-    afterScript "source deactivate kraken"
 
     input:
         set val(name), file(kraken_out) from kraken_output
@@ -464,14 +459,13 @@ process kraken_report {
 process metaphlan {
     tag "$name"
 
+    conda 'bioconda::metaphlan2'
+
     label 'normal'
 
     cpus params.metaphlanCPU
 
     publishDir "${params.results}/kraken", mode: 'copy'
-
-    beforeScript "set +u; source activate metaphlan"
-    afterScript "source deactivate metaphlan"
 
     input:
         set val(name), file(fasta) from trimmed_reads_metaphlan
@@ -488,14 +482,13 @@ process metaphlan {
 process megablast {
     tag "$name"
 
+    conda 'bioconda::blast'
+
     label 'normal'
 
     cpus params.megablastCPU
 
     publishDir "${params.results}/megablast", mode: 'copy'
-
-    beforeScript "set +u; source activate blast"
-    afterScript "source deactivate"
 
     input:
         set val(name), file(fasta) from fasta2megablast
@@ -512,6 +505,8 @@ process megablast {
 process basta_from_blast {
     tag "$name"
 
+    conda '$baseDir/envs/basta_env.yaml'
+
     errorStrategy 'ignore'
 
     label 'normal'
@@ -522,8 +517,6 @@ process basta_from_blast {
 
     publishDir "${params.results}/megablast", mode: 'copy'
 
-    beforeScript "set +u; source activate basta"
-    afterScript "source deactivate"
 
     input:
         set val(name), file(blast_out) from blast_output
@@ -590,6 +583,8 @@ process malt_convert {
 process basta_from_malt {
     tag "$name"
 
+    conda '$baseDir/envs/basta_env.yaml'
+
     errorStrategy 'ignore'
 
     label 'normal'
@@ -599,9 +594,6 @@ process basta_from_malt {
     cpus 1
 
     publishDir "${params.results}/malt", mode: 'copy'
-
-    beforeScript "set +u; source activate basta"
-    afterScript "source deactivate"
 
     input:
         set val(name), file(malt_out) from malt_converted
@@ -621,6 +613,8 @@ process basta_from_malt {
 // Step 15 - Result summary
 process summarize_results {
     tag "$name"
+
+    conda 'python=3.6'
 
     errorStrategy 'ignore'
 
@@ -655,10 +649,6 @@ process multiqc {
     cpus 1
 
     publishDir "${params.results}/MultiQC", mode: 'copy'
-
-    beforeScript "set +u; source activate multiqc"
-    afterScript "source deactivate"
-
 
     input:
         file (fastqc:'fastqc/*') from fastqc_results.collect()
