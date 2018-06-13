@@ -22,32 +22,6 @@ Admapipe (Ancient DNA Metagenomics Analysis PIPEline) is a [Nextflow](https://ne
 -   MALT database: to [build](http://ab.inf.uni-tuebingen.de/data/software/malt/download/manual.pdf) from reference sequence file.
 -   [BASTA database](https://github.com/timkahlke/BASTA/wiki/2.-Initial-Setup)
 
-## The Pipeline
-
-**Pipeline overview:**
-
--   **1:**     FASTQC
--   **2:**     AdapterRemoval: Adapter trimming, quality filtering, and read merging
--   **3:**     Megahit: Metagenome de novo assembly
--   **4:**     Building bowtie index with contigs
--   **5:**     Aligning reads back on the contigs
--   **6:**     Indexing BAM alignment
--   **7:**     Converting BAM to SAM
--   **8:**     Position specific coverage for contigs
--   **9.1:**   Contig filtering on 10th percentile coverage
--   **9.2:**   Fasta file filtering with filtered contigs on coverage
--   **10:**    Fasta file filtering on contig length
--   **11.1:**  Kraken metagenome taxonomic classification
--   **11.2:**  Kraken report generation
--   **12:**    Metaphlan metagenome analyis
--   **13.1:**  MegaBlast contig analysis
--   **13.2:**  LCA with BASTA from MegaBlast result
--   **14.1:**  MALT metagenome analysis
--   **14.2:**  Conversion of MALT results to standard blast output file
--   **14.3:**  LCA with BASTA from MALT result
--   **15:**    Result summary
--   **\*:**     MultiQC
-
 ## Documentation
 
     $ nextflow run maxibor/admapipe --help
@@ -90,3 +64,33 @@ Admapipe (Ancient DNA Metagenomics Analysis PIPEline) is a [Nextflow](https://ne
     Other options:
     --results                     Name of result directory. Defaults to ./admapipe_results
     --help  --h                   Shows this help page
+
+## The Pipeline
+
+**Pipeline overview:**
+
+-   **1:**     FASTQC
+-   **2:**     AdapterRemoval: Adapter trimming, quality filtering, and read merging
+-   **3:**     Megahit: Metagenome de novo assembly
+-   **4:**     Building bowtie index with contigs
+-   **5:**     Aligning reads back on the contigs
+-   **6:**     Indexing BAM alignment
+-   **7:**     Converting BAM to SAM
+-   **8:**     Position specific coverage for contigs
+-   **9.1:**   Contig filtering on 10th percentile coverage
+-   **9.2:**   Fasta file filtering with filtered contigs on coverage
+-   **10:**    Fasta file filtering on contig length
+-   **11.1:**  Kraken metagenome taxonomic classification
+-   **11.2:**  Kraken report generation
+-   **12:**    Metaphlan metagenome analyis
+-   **13.1:**  MegaBlast contig analysis
+-   **13.2:**  LCA with BASTA from MegaBlast result
+-   **14.1:**  MALT metagenome analysis
+-   **14.2:**  Conversion of MALT results to standard blast output file
+-   **14.3:**  LCA with BASTA from MALT result
+-   **15:**    Result summary
+-   **\*:**     MultiQC
+
+## Admapipe Workflow
+
+![](img/workflow.png)
