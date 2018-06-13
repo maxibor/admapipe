@@ -19,8 +19,7 @@ Admapipe (Ancient DNA Metagenomics Analysis PIPEline) is a [Nextflow](https://ne
 -   **7:**     Converting BAM to SAM
 -   **8:**     Position specific coverage for contigs
 -   **9.1:**   Contig filtering on 10th percentile coverage
--   **9.2:**   SAM file filtering with filtered contigs on coverage
--   **9.3:**   Fasta file filtering with filtered contigs on coverage
+-   **9.2:**   Fasta file filtering with filtered contigs on coverage
 -   **10:**    Fasta file filtering on contig length
 -   **11.1:**  Kraken metagenome taxonomic classification
 -   **11.2:**  Kraken report generation
@@ -31,47 +30,46 @@ Admapipe (Ancient DNA Metagenomics Analysis PIPEline) is a [Nextflow](https://ne
 -   **14.2:**  Conversion of MALT results to standard blast output file
 -   **14.3:**  LCA with BASTA from MALT result
 -   **15:**    Result summary
--   **16:**    Plot UpSet
 -   **\*:**     MultiQC
 
 ## Documentation
 
-    $ nextflow run main.nf --help
-    N E X T F L O W  ~  version 0.29.1
-    Launching `main.nf` [stupefied_hopper] - revision: 3c445188f9
+    $ nextflow run maxibor/admapipe
+    N E X T F L O W  ~  version 0.27.4
+    Launching `main.nf` [golden_miescher] - revision: bccc522224
 
     =========================================
      Admapipe: Ancient DNA Metagenomics Analysis PIPEline
-     Homepage / Documentation: https://github.com/maxibor/admapipe
-     Author: Maxime Borry <maxime.borry@gmail.com>
-     Version 0.1
-     Last updated on May 31th, 2018
-    =========================================
+     Homepage / Documentation: <https://github.com/maxibor/admapipe>
+     Author: Maxime Borry <mailto:maxime.borry@gmail.com>
+     Version 0.2
+
+    # Last updated on June 13th, 2018
+
     Usage:
     The typical command for running the pipeline is as follows:
-    nextflow run maxibor/admapipe --reads '*_R{1,2}.fastq.gz'
+    nextflow run maxibor/admapipe --reads '\*\_R{1,2}.fastq.gz'
     Mandatory arguments:
-      --reads                       Path to input data (must be surrounded with quotes)
+      \--reads                       Path to input data (must be surrounded with quotes)
 
     Options:
-      --phred                       Specifies the fastq quality encoding (33 | 64). Defaults to 64
-      --minimum_coverage            Specifies the minimum 10th percentile coverage to consider a contig. Defaults to 2
-      --min_length                  Specifies the minimum length of a contig to be considered. Defaults to 300
-      --trimmingCPU                 Specifies the number of CPU used to trimming/cleaning by AdapterRemoval. Defaults to 16
-      --megahitCPU                  Specifies the number of CPU used for Assembly by megahit. Defaults to 16
-      --bowtieCPU                   Specifies the number of CPU used by bowtie2 aligner. Defaults to 20
-      --krakenCPU                   Specifies the number of CPU used by Kraken taxonomic classifier. Defaults to 20
-      --metaphlanCPU                Specifies the number of CPU used by Metaphlan. Defaults to 20
-      --megablastCPU                Specifies the number of CPU used by MegaBlast. Defaults to 20
-      --maltCPU                     Specifies the number of CPU used by MALT taxonomic classifier. Default to 16
+      \--phred                       Specifies the fastq quality encoding (33 | 64). Defaults to 64
+      \--minimum_coverage            Specifies the minimum 10th percentile coverage to consider a contig. Defaults to 2
+      \--min_length                  Specifies the minimum length of a contig to be considered. Defaults to 300
+      \--trimmingCPU                 Specifies the number of CPU used to trimming/cleaning by AdapterRemoval. Defaults to 16
+      \--megahitCPU                  Specifies the number of CPU used for Assembly by megahit. Defaults to 16
+      \--bowtieCPU                   Specifies the number of CPU used by bowtie2 aligner. Defaults to 20
+      \--krakenCPU                   Specifies the number of CPU used by Kraken taxonomic classifier. Defaults to 20
+      \--metaphlanCPU                Specifies the number of CPU used by Metaphlan. Defaults to 20
+      \--megablastCPU                Specifies the number of CPU used by MegaBlast. Defaults to 20
+      \--maltCPU                     Specifies the number of CPU used by MALT taxonomic classifier. Default to 16
 
     References: (files and directories must exist if used)
-      --krakendb                    Path to Kraken index database. Defaults to /home/dist/maxime.borry/db/kraken/minikraken_20171101_8GB_dustmasked
-      --blastdb                     Path to Blast index database. Defaults to /home/dist/maxime.borry/db/nt/blast/blast/nt
-      --maltdb                      Path to MALT index database. Defaults to /home/dist/maxime.borry/db/malt/refseq_bacteria_step2
-      --bastadb                     Path to BASTA (LCA) database. Defaults to /home/dist/maxime.borry/BASTA/taxonomy
+      \--krakendb                    Path to Kraken index database. Defaults to /home/dist/maxime.borry/db/kraken/minikraken_20171101_8GB_dustmasked
+      \--blastdb                     Path to Blast index database. Defaults to /home/dist/maxime.borry/db/nt/blast/blast/nt
+      \--maltdb                      Path to MALT index database. Defaults to /home/dist/maxime.borry/db/malt/refseq_bacteria_step2
+      \--bastadb                     Path to BASTA (LCA) database. Defaults to /home/dist/maxime.borry/BASTA/taxonomy
 
     Other options:
-      --results                     Name of result directory. Defaults to ./admapipe_results
-      --help                        Shows this help page
-      --h                           Shows this help page
+      \--results                     Name of result directory. Defaults to ./admapipe_results
+      \--help  --h                   Shows this help page
