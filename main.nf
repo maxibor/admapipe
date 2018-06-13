@@ -183,6 +183,8 @@ process fastqc {
 process adapter_removal_ancient_dna_PE {
     tag "$name"
 
+    conda 'bioconda::adapterremoval'
+
     label 'normal'
 
     cpus params.trimmingCPU
