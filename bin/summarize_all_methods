@@ -4,6 +4,7 @@ import requests
 import argparse
 import re
 
+
 def get_args():
     '''This function parses and return arguments passed in'''
     parser = argparse.ArgumentParser(
@@ -230,7 +231,8 @@ if __name__ == "__main__":
 
     if CENTRIFUGE_CONTIGS:
         print("Processing centrifuge contigs")
-        centrifuge_contigs_guess = parse_krakenlike(CENTRIFUGE_CONTIGS, MIN_CONTIGS)
+        centrifuge_contigs_guess = parse_krakenlike(
+            CENTRIFUGE_CONTIGS, MIN_CONTIGS)
         all_species.extend(centrifuge_contigs_guess)
         methods_results["centrifuge_contigs"] = centrifuge_contigs_guess
         # print("centrifuge_contigs", centrifuge_contigs_guess)
