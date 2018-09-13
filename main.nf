@@ -302,6 +302,8 @@ process bam_index {
 process bam2sam {
     tag "$name"
 
+    conda 'bioconda::samtools'
+
     label 'normal'
 
     cpus 1
@@ -507,7 +509,7 @@ process megablast {
 process basta_from_blast {
     tag "$name"
 
-    conda '$baseDir/envs/basta_env.yaml'
+    conda 'bnoon::leveldb bnoon:plyvel bioconda::krona'
 
     errorStrategy 'ignore'
 
@@ -585,7 +587,7 @@ process malt_convert {
 process basta_from_malt {
     tag "$name"
 
-    conda '$baseDir/envs/basta_env.yaml'
+    conda 'bnoon::leveldb bnoon:plyvel bioconda::krona'
 
     errorStrategy 'ignore'
 
@@ -643,6 +645,8 @@ process summarize_results {
 // MultiQC
 process multiqc {
     tag "$prefix"
+
+    conda 'bioconda::multiqc'
 
     errorStrategy 'ignore'
 
